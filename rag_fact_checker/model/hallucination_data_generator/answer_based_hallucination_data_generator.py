@@ -474,6 +474,9 @@ class AnswerBasedHallucinationDataGenerator(
         Returns:
             SimpleBatchResult containing HallucinationDataGeneratorOutput for each successful generation
         """
+        import asyncio
+        import time
+
         batch_size = len(correct_answers)
 
         if len(questions) != batch_size:
