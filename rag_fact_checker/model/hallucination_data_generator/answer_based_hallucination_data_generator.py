@@ -130,6 +130,7 @@ class AnswerBasedHallucinationDataGenerator(
             messages=hallucination_prompt,
             temperature=self.config.model.llm.temperature,
             response_format=answer_hallucination_schema,
+            stream=False,
         )
 
         hallucination_output = response.choices[0].message.content
@@ -232,6 +233,7 @@ class AnswerBasedHallucinationDataGenerator(
             messages=hallucination_prompt,
             temperature=self.config.model.llm.temperature,
             response_format=answer_hallucination_schema,
+            stream=False,
         )
 
         hallucination_output = response.choices[0].message.content
@@ -349,9 +351,17 @@ class AnswerBasedHallucinationDataGenerator(
             tuple: (hallucinated_answer, hallucinated_parts_list)
         """
         import json
+        import re
 
         try:
-            data = json.loads(hallucination_output.strip())
+            # Clean up potential markdown formatting
+            cleaned_output = hallucination_output.strip()
+            if "```" in cleaned_output:
+                match = re.search(r"```(?:json)?\s*(.*?)\s*```", cleaned_output, re.DOTALL)
+                if match:
+                    cleaned_output = match.group(1)
+            data = json.loads(cleaned_output)
+
 
             hallucinated_answer = data.get("hallucinated_answer", "").strip()
 
@@ -464,9 +474,6 @@ class AnswerBasedHallucinationDataGenerator(
         Returns:
             SimpleBatchResult containing HallucinationDataGeneratorOutput for each successful generation
         """
-        import asyncio
-        import time
-
         batch_size = len(correct_answers)
 
         if len(questions) != batch_size:
